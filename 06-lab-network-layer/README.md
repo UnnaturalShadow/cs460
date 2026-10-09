@@ -117,8 +117,8 @@ start it up:
 
 Run the following command:
 
-```
-$ cougarnet --disable-ipv6 --display scenario1.cfg
+```bash
+cougarnet --disable-ipv6 --display scenario1.cfg
 ```
 
 After a few seconds of awkward silence, you will see output on the terminal
@@ -316,8 +316,8 @@ the cougarnet output matches appropriately.
 
 When it is working properly, test also with the `--terminal=none` option:
 
-```
-$ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
+```bash
+cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 ```
 
 
@@ -325,7 +325,8 @@ $ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 
 ### Ethernet Frames
 
-See the documentation for the Link-Layer lab for
+See the [Networking Reference](../NETWORKING_REFERENCE.md#ethernet) 
+and the documentation for the Link-Layer lab for
 [additional helps for Ethernet frames](../04-lab-link-layer/README.md#ethernet-frames).
 
 
@@ -338,52 +339,19 @@ See the documentation for the Link-Layer lab for
 ### ARP Packets
 
 Your code will need to both create ARP packets for sending and parse ARP
-packets that have been received on the "wire".  ARP packets have the following
-format:
+packets that have been received on the "wire". See the 
+[Networking Reference](../NETWORKING_REFERENCE.md#arp-packet) for information 
+on the format of ARP packets.
 
-<table border="1">
-<tr>
-<th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th>
-<th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
-<th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
-<th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th></tr>
-<tr>
-<td colspan="16">Hardware type</td>
-<td colspan="16">Protocol type</td></tr>
-<tr>
-<td colspan="8">Hardware address length</td>
-<td colspan="8">Protocol address length</td>
-<td colspan="16">Opcode</td></tr>
-<tr>
-<td colspan="32">Source hardware address :::</td></tr>
-<tr>
-<td colspan="32">Source protocol address :::</td></tr>
-<tr>
-<td colspan="32">Destination hardware address :::</td></tr>
-<tr>
-<td colspan="32">Destination protocol address :::</td></tr>
-<tr>
-<td colspan="32">Data :::</td></tr>
-</table>
+The length of the hardware and protocol addresses will match the value of
+the Hardware Address Length and Protocol Address Length fields – that is, 6
+and 4, respectively. In theory, the two fields have a variable length since
+they could be applied to hardware other than Ethernet and protocols other than
+IPv4. However, for this class we will only be using Ethernet and IPv4 for the fields.
 
-Regarding the fields:
- - Hardware Type will always be Ethernet (`ARPHRD_ETHER = 1`)
- - Protocol Type will always be IPv4 (`ETH_P_IP = 0x0800`)
- - Hardware Address Length will always be 6 (MAC addresses are six bytes
-   long)
- - Protocol Address Length will always be 4 (IPv4 addresses are four bytes
-   long)
- - Operation (or opcode) will either be request (`ARPOP_REQUEST = 1`) or reply
-   (`ARPOP_REPLY = 2`).
- - The length of the hardware and protocol addresses will match the value of
-   the Hardware Address Length and Protocol Address Length fields--that is, 6
-   and 4, respectively.  They are shown as variable length (`:::`) because they
-   could be applied to hardware other than Ethernet and protocols other than
-   IPv4.
- - While "Hardware" and "Protocol" are the more generic terms for the fields,
-   they are referred to in the instructions as "MAC" and "IP" since those are
-   the protocols we are working with.
-
+While "Hardware" and "Protocol" are the more generic terms for the fields,
+they are referred to in the instructions as "MAC" and "IP" since those are
+the protocols we are working with.
 
 ### Address Representation Conversion
 
@@ -439,12 +407,12 @@ before you begin, as it might be easier for you to do one before the other.
     see how they are called and what correct output looks.  Additionally, you
     can test functionality with the following command:
 
-    ```
+    ```bash
     python3 -m doctest prefix.py
     ```
 
     At this point, the following should run without error (and without output):
-    ```
+    ```bash
     python3 -m doctest prefix.py
     ```
 
@@ -457,18 +425,18 @@ before you begin, as it might be easier for you to do one before the other.
 
     - The return values in the doc tests must be correct; and
     - The following should run without error (and without output):
-      ```
+      ```bash
       python3 -m doctest prefix.py
       ```
 
  4. Fill out the following method (marked with `FIXME`):
 
-    - `ForwardingTable.get_forwarding_entry()` (approx. 10 lines of code)
+    - `ForwardingTable.get_entry()` (approx. 10 lines of code)
 
       Remember to use longest prefix match!
 
  5. Fill in the appropriate return value for each of the doctests for
-    `ForwardingTable.get_forwarding_entry()` in `forwarding_table.py`.
+    `ForwardingTable.get_entry()` in `forwarding_table.py`.
     `('someintf', 'someip')` is currently used as a placeholder for each
     output, but the return value _should_ yield a tuple of type (`str`, `str`),
     corresponding to outgoing interface name and next hop-IP address (or
@@ -484,7 +452,7 @@ before you begin, as it might be easier for you to do one before the other.
 
     - The return values in the doc tests must be correct; and
     - The following should run without error (and without output):
-    ```
+    ```bash
     python3 -m doctest forwarding_table.py
     ```
 
@@ -516,8 +484,8 @@ functionality.  Your focus is on the host/router functionality.
 Take a look at the contents of `scenario2.cfg`.  Then run the following to
 start it up:
 
-```
-$ cougarnet --disable-ipv6 scenario2.cfg
+```bash
+cougarnet --disable-ipv6 scenario2.cfg
 ```
 
 After a few seconds of awkward silence, you will see output on the terminal
@@ -722,8 +690,8 @@ the cougarnet output matches appropriately.
 
 When it is working properly, test also with the `--terminal=none` option:
 
-```
-$ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
+```bash
+cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 ```
 
 
@@ -732,42 +700,13 @@ $ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 ### IPv4 Packets
 
 Your code will need to parse IPv4 packets, both as received from the "wire" and
-as passed by a method (e.g., `send_packet()`)--in both cases as `bytes`
-instances.  The packet that you will be receiving looks like this:
-
-<table border="1">
-<tr>
-<th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th>
-<th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
-<th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
-<th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th></tr>
-<tr>
-<td colspan="4">Version</td>
-<td colspan="4">IHL</td>
-<td colspan="8">Differentiated Services</td>
-<td colspan="16">Total length</td></tr>
-<tr>
-<td colspan="16">Identification</td>
-<td colspan="3">Flags</td>
-<td colspan="13">Fragment offset</td></tr>
-<tr>
-<td colspan="8">TTL</td>
-<td colspan="8">Protocol</td>
-<td colspan="16">Header checksum</td></tr>
-<tr>
-<td colspan="32">Source IP address</td></tr>
-<tr>
-<td colspan="32">Destination IP address</td></tr>
-<tr>
-<td colspan="32">Options and padding :::</td></tr>
-</table>
-
+as passed by a method (e.g., `send_packet()`) – in both cases as `bytes`
+instances. See the [Networking Reference](../NETWORKING_REFERENCE.md#ipv4-header) for information on the format and fields of IPv4 packets.
 
 ### Address Representation Conversion
 
 See the help on
 [Address Representation Conversion](#address-representation-conversion) above.
-above.
 
 
 # Automated Testing
@@ -777,7 +716,7 @@ testing of parts 1 and 3.  This is not a replacement for manual testing but can
 be used as a sanity check.  You can use it by simply running the following in
 the working directory:
 
-```
+```bash
 ./driver.py
 ```
 
@@ -797,13 +736,13 @@ following distribution:
  - Part 2: 32 points
    - 8 points for correct doctests in `prefix.py`
    - 8 points for running the following without error:
-     ```
-     $ python -m doctest prefix.py
+     ```bash
+     python3 -m doctest prefix.py
      ```
    - 8 points for correct doctests in `forwarding_table.py`
    - 8 points for running the following without error:
-     ```
-     $ python -m doctest forwarding_table.py
+     ```bash
+     python3 -m doctest forwarding_table.py
      ```
  - Part 3: 28 points
    - 22 points for first 11 tests (2 points each)
@@ -849,9 +788,9 @@ working `switch.py` from the
 [Link Layer Lab](../04-lab-link-layer/) into your current directory.  Then run
 the following:
 
-```
-$ cougarnet --disable-ipv6 --terminal=none scenario1-mine.cfg
-$ cougarnet --disable-ipv6 --terminal=none scenario2-mine.cfg
+```bash
+cougarnet --disable-ipv6 --terminal=none scenario1-mine.cfg
+cougarnet --disable-ipv6 --terminal=none scenario2-mine.cfg
 ```
 
 Yep, that is all your software moving around real frames and packets!
@@ -912,8 +851,8 @@ proceed with checking your ARP table and sending an ARP request, if necessary.
 
 To test your handling of IP subnet-level broadcasts, use the following: 
 
-```
-$ cougarnet --disable-ipv6 --terminal=none scenario3-opt.cfg
+```bash
+cougarnet --disable-ipv6 --terminal=none scenario3-opt.cfg
 ```
 
 This is the same topology as that used 
@@ -935,8 +874,8 @@ This is the same topology as that used
 Use the following commands to create a directory, place your working files in
 it, and tar it up:
 
-```
-$ mkdir network-lab
-$ cp host.py prefix.py forwarding_table.py network-lab
-$ tar -zcvf network-lab.tar.gz network-lab
+```bash
+mkdir network-lab
+cp host.py prefix.py forwarding_table.py network-lab
+tar -zcvf network-lab.tar.gz network-lab
 ```

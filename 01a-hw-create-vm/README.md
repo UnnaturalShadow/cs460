@@ -46,7 +46,11 @@ might need to adapt these instructions.
     c. ISO Image: Select the install image (`.iso` file) you downloaded in
        step 2.
 
-    d. Check the box labeled "Skip Unattended Installation".
+    d. Uncheck the box labeled "Proceed with Unattended Installation".
+
+       (If you instead see a checkbox labeled "Skip Unattended Installation",
+       you should *check* the box instead.  Some versions of VirtualBox present
+       it that way.)
 
     Click "Next".
 
@@ -106,7 +110,7 @@ might need to adapt these instructions.
      a. Run the following from the command line to temporarily become `root`
         (system administrator):
 
-        ```
+        ```bash
         su -
         ```
 
@@ -117,7 +121,7 @@ might need to adapt these instructions.
 
         (Replace "$USER" with the username of your regular, non-root user.
 
-        ```
+        ```bash
         usermod -a -G sudo $USER
         ```
 
@@ -126,7 +130,7 @@ might need to adapt these instructions.
 
      d. Test your `sudo` access by running the following:
 
-        ```
+        ```bash
         sudo ls -l /root/
         ```
 
@@ -151,14 +155,14 @@ might need to adapt these instructions.
      c. From the open terminal, run the following to mount the "inserted"
         virtual CD containing the guest additions.
 
-        ```
+        ```bash
         mount /media/cdrom
         ```
 
      d. From the open terminal, run the following commands to build and install
         the VirtualBox Guest Additions for your VM:
 
-        ```
+        ```bash
         sudo apt install linux-headers-amd64 build-essential
         sudo sh /media/cdrom/VBoxLinuxAdditions.run
         ```
@@ -197,7 +201,7 @@ might need to adapt these instructions.
 
      a. Run the following to add your user to the `vboxsf` group:
 
-        ```
+        ```bash
         sudo usermod -a -G vboxsf $USER
         ```
 
@@ -218,7 +222,7 @@ might need to adapt these instructions.
  15. In the VM, open a terminal, and run the following to remove some
      unnecessary packages from your VM:
 
-     ```
+     ```bash
      sudo apt purge libreoffice-{impress,math,writer,draw,base-core,core,help-common,core-nogui} xscreensaver
      sudo apt autoremove
      ```
@@ -237,20 +241,20 @@ might need to adapt these instructions.
  18. In the VM, open a terminal, and run the following to install a few
      packages that will be useful for you in this class:
 
+     (At the prompt "Should non-superusers be able to capture packets?" (for
+     `wireshark`), select "No".  We will handle that with the next step.)
+
      ```bash
      sudo apt install git tmux vim build-essential make \
          wireshark tcpdump iptables swaks curl \
          python3-scapy python3-pip virtualenv
      ```
 
-     At the prompt "Should non-superusers be able to capture packets?" (for
-     `wireshark`), select "No".  We will handle that with the next step.
-
      Next run the following to give `tcpdump`, `wireshark`, and `dumpcap`
      targeted capabilities, so an unprivileged user can run them to observe
      network packets without elevating to `root`:
 
-     ```
+     ```bash
      sudo setcap cap_net_raw=eip /usr/bin/tcpdump
      sudo setcap cap_net_raw=eip /usr/bin/wireshark
      sudo setcap cap_net_raw=eip /usr/bin/dumpcap
@@ -355,7 +359,7 @@ might need to adapt these instructions.
     e. Use the following command to ensure that the shared volume is
        mounted automatically at boot:
 
-       ```
+       ```bash
        sudo -e /etc/fstab
        ```
 

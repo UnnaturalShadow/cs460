@@ -27,6 +27,7 @@ between TCP sockets connected over a TCP connection.
  - [Part 5 - TCP Tahoe (Extra Credit)](#part-5---tcp-tahoe-extra-credit)
    - [Instructions](#instructions-4)
    - [Testing](#testing-4)
+ - [Evaluation](#evaluation)
  - [Submission](#submission)
 
 
@@ -663,7 +664,7 @@ and the sequence number that corresponds to bytes that have sent by its peer.
 The former is stored as the instance variable `seq`, and the latter is stored
 as the instance variable `ack`.  They are initialized as follows:
 
-```
+```python
 self.seq = self.base_seq_self + 1
 self.ack = self.base_seq_other + 1
 ```
@@ -699,8 +700,8 @@ but your code should get past this okay.
 First, test your TCP implementation to transfer the very small file `hello.txt`
 over the TCP connection:
 
-```
-$ cougarnet --wireshark a-b --vars loss=0,window=10000,file=hello.txt,fast_retransmit=off scenario1.cfg
+```bash
+cougarnet --wireshark a-b --vars loss=0,window=10000,file=hello.txt,fast_retransmit=off scenario1.cfg
 ```
 
 Because it is so small, it will all fit within a single segment (and, of
@@ -708,10 +709,16 @@ course, in a single window).  Check the wireshark output to make sure the
 sequence, acknowledgment numbers, and segment lengths look correct.  Then check
 that it was actually received properly:
 
+```bash
+cat downloads/hello.txt
 ```
-$ cat downloads/hello.txt
+```
 hello world
-$ sha1sum hello.txt downloads/hello.txt
+```
+```bash
+sha1sum hello.txt downloads/hello.txt
+```
+```
 22596363b3de40b06f981fb85d82312e8c0ed511  hello.txt
 22596363b3de40b06f981fb85d82312e8c0ed511  downloads/hello.txt
 ```
@@ -722,8 +729,8 @@ Now, test your TCP implementation to transfer the much larger `test.txt` over
 the TCP connection without any loss using a fixed congestion window size of
 10,000 bytes:
 
-```
-$ cougarnet --wireshark a-b --vars loss=0,window=10000,file=test.txt,fast_retransmit=off scenario1.cfg
+```bash
+cougarnet --wireshark a-b --vars loss=0,window=10000,file=test.txt,fast_retransmit=off scenario1.cfg
 ```
 
 (Running with `--wireshark` is optional, but you might find it helpful.)
@@ -731,22 +738,26 @@ $ cougarnet --wireshark a-b --vars loss=0,window=10000,file=test.txt,fast_retran
 The file should transfer in no more than a second or two, and it should be in
 tact:
 
+```bash
+sha1sum test.txt downloads/test.txt
 ```
-$ sha1sum test.txt downloads/test.txt
+```
 e742dc9de5bac34d82117e015f597378a205e5c1  test.txt
 e742dc9de5bac34d82117e015f597378a205e5c1  downloads/test.txt
 ```
 
 When this is working, test on an even larger file, `byu-y-mtn.jpg`:
 
-```
-$ cougarnet --vars loss=0,window=10000,file=byu-y-mtn.jpg,fast_retransmit=off scenario1.cfg
+```bash
+cougarnet --vars loss=0,window=10000,file=byu-y-mtn.jpg,fast_retransmit=off scenario1.cfg
 ```
 
 This one should transfer in roughly 15 seconds and should also be in tact:
 
+```bash
+sha1sum byu-y-mtn.jpg downloads/byu-y-mtn.jpg
 ```
-$ sha1sum byu-y-mtn.jpg downloads/byu-y-mtn.jpg
+```
 6d82cbd6949c0bb89a9071b821bb62ed73a462ff  byu-y-mtn.jpg
 6d82cbd6949c0bb89a9071b821bb62ed73a462ff  downloads/byu-y-mtn.jpg
 ```
@@ -754,8 +765,8 @@ $ sha1sum byu-y-mtn.jpg downloads/byu-y-mtn.jpg
 Finally, transfer the image file again with a larger window size of 50,000
 bytes:
 
-```
-$ cougarnet --vars loss=0,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off scenario1.cfg
+```bash
+cougarnet --vars loss=0,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off scenario1.cfg
 ```
 
 The larger window _should_ cut the transfer time down significantly.  However,
@@ -770,8 +781,8 @@ increase.
 Test your TCP implementation to transfer the file `test.txt` over the
 TCP connection with a 5% loss rate each direction:
 
-```
-$ cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=off scenario1.cfg
+```bash
+cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=off scenario1.cfg
 ```
 
 The file should still transfer properly (i.e., as shown by `sha1sum`), though
@@ -780,8 +791,8 @@ it might take 10 - 15 seconds with the timeouts and retransmissions
 When this is working, test on a larger file, `byu-y-mtn.jpg`, with lower loss
 rate and larger congestion window:
 
-```
-$ cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off scenario1.cfg
+```bash
+cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off scenario1.cfg
 ```
 
 The file should still transfer properly (i.e., as shown by `sha1sum`), though
@@ -794,12 +805,12 @@ retransmissions.
 When transmissions are working, with and without loss, make sure they are all
 working with the `--terminal=none` option:
 
-```
-$ cougarnet --vars loss=0,window=10000,file=test.txt,fast_retransmit=off --terminal=none scenario1.cfg
-$ cougarnet --vars loss=0,window=10000,file=byu-y-mtn.jpg,fast_retransmit=off --terminal=none scenario1.cfg
-$ cougarnet --vars loss=0,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off --terminal=none scenario1.cfg
-$ cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=off --terminal=none scenario1.cfg
-$ cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off --terminal=none scenario1.cfg
+```bash
+cougarnet --vars loss=0,window=10000,file=test.txt,fast_retransmit=off --terminal=none scenario1.cfg
+cougarnet --vars loss=0,window=10000,file=byu-y-mtn.jpg,fast_retransmit=off --terminal=none scenario1.cfg
+cougarnet --vars loss=0,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off --terminal=none scenario1.cfg
+cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=off --terminal=none scenario1.cfg
+cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=off --terminal=none scenario1.cfg
 ```
 
 
@@ -825,24 +836,26 @@ repeated until a new, larger acknowledgment is received.
 Test your fast retransmit functionality, but first running the tests without
 packet loss, to make sure they still work as expected:
 
-```
-$ cougarnet --vars loss=0,window=10000,file=test.txt,fast_retransmit=on --terminal=none scenario1.cfg
-$ cougarnet --vars loss=0,window=10000,file=byu-y-mtn.jpg,fast_retransmit=on --terminal=none scenario1.cfg
-$ cougarnet --vars loss=0,window=50000,file=byu-y-mtn.jpg,fast_retransmit=on --terminal=none scenario1.cfg
+```bash
+cougarnet --vars loss=0,window=10000,file=test.txt,fast_retransmit=on --terminal=none scenario1.cfg
+cougarnet --vars loss=0,window=10000,file=byu-y-mtn.jpg,fast_retransmit=on --terminal=none scenario1.cfg
+cougarnet --vars loss=0,window=50000,file=byu-y-mtn.jpg,fast_retransmit=on --terminal=none scenario1.cfg
 ```
 
 Running the tests with packet loss _should_ result in faster transmission times:
 
-```
-$ cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=on scenario1.cfg
-$ cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=on scenario1.cfg
+```bash
+cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=on scenario1.cfg
+cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=on scenario1.cfg
 ```
 
 Specifically, the file `test.txt` should transfer in no more than a second or
 two, and it should be in tact:
 
+```bash
+sha1sum test.txt downloads/test.txt
 ```
-$ sha1sum test.txt downloads/test.txt
+```
 e742dc9de5bac34d82117e015f597378a205e5c1  test.txt
 e742dc9de5bac34d82117e015f597378a205e5c1  downloads/test.txt
 ```
@@ -856,17 +869,19 @@ the very least, however, the transfer time should not be expected to increase.
 
 Also, the file should be in tact:
 
+```bash
+sha1sum byu-y-mtn.jpg downloads/byu-y-mtn.jpg
 ```
-$ sha1sum byu-y-mtn.jpg downloads/byu-y-mtn.jpg
+```
 6d82cbd6949c0bb89a9071b821bb62ed73a462ff  byu-y-mtn.jpg
 6d82cbd6949c0bb89a9071b821bb62ed73a462ff  downloads/byu-y-mtn.jpg
 ```
 
 Finally test with the `--terminal=none` option:
 
-```
-$ cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=on --terminal=none scenario1.cfg
-$ cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=on --terminal=none scenario1.cfg
+```bash
+cougarnet --vars loss=5,window=10000,file=test.txt,fast_retransmit=on --terminal=none scenario1.cfg
+cougarnet --vars loss=1,window=50000,file=byu-y-mtn.jpg,fast_retransmit=on --terminal=none scenario1.cfg
 ```
 
 
@@ -921,8 +936,8 @@ you to specify a congestion control algorithm on the command line, e.g.,
 
 Run the following command to run the file transfer with no loss:
 
-```
-$ cougarnet --wireshark a-b --vars loss=0,window=1000,file=byu-y-mtn.jpg,fast_retransmit=on,congestion_control=tahoe scenario2.cfg
+```bash
+cougarnet --wireshark a-b --vars loss=0,window=1000,file=byu-y-mtn.jpg,fast_retransmit=on,congestion_control=tahoe scenario2.cfg
 ```
 
 When the file is done transmitting, select one of the packets in the capture
@@ -943,8 +958,8 @@ If everything looks good, click "Save As...", and save the file as
 
 Now run the following command to test with 0.1% loss:
 
-```
-$ cougarnet --wireshark a-b --vars loss=0.1,window=1000,file=byu-y-mtn.jpg,fast_retransmit=on,congestion_control=tahoe scenario2.cfg
+```bash
+cougarnet --wireshark a-b --vars loss=0.1,window=1000,file=byu-y-mtn.jpg,fast_retransmit=on,congestion_control=tahoe scenario2.cfg
 ```
 
 When the file is done transmitting, select one of the packets in the capture
@@ -969,22 +984,32 @@ implementation still works as expected with Parts [3](#testing-2) and
 [4](#testing-3).
 
 
+# Evaluation
+
+Your score will be computed out of a maximum of 100 points based on the
+following distribution:
+
+ - Part 1: 70 points
+ - Part 2: 30 points
+ - Part 3: 6 points (extra credit)
+
+
 # Submission
 
 Use the following commands to create a directory, place your working files in
 it, and tar it up:
 
 ```bash
-$ mkdir tcp-lab
-$ cp buffer.py mysocket.py tcp-lab
-$ tar -zcvf tcp-lab.tar.gz tcp-lab
+mkdir tcp-lab
+cp buffer.py mysocket.py tcp-lab
+tar -zcvf tcp-lab.tar.gz tcp-lab
 ```
 
 If you have done Part 5, please use these commands to also include your image
 files.
 
 ```bash
-$ mkdir tcp-lab
-$ cp buffer.py mysocket.py tahoe-noloss.png tahoe-someloss.png tcp-lab
-$ tar -zcvf tcp-lab.tar.gz tcp-lab
+mkdir tcp-lab
+cp buffer.py mysocket.py tahoe-noloss.png tahoe-someloss.png tcp-lab
+tar -zcvf tcp-lab.tar.gz tcp-lab
 ```

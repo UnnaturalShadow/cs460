@@ -83,7 +83,7 @@ sudo pip3 install --root-user-action ignore --break-system-packages .
 
     a. Open `/etc/frr/daemons` for editing using the following command:
 
-       ```
+       ```bash
        sudo -e /etc/frr/daemons
        ```
   
@@ -104,7 +104,7 @@ sudo pip3 install --root-user-action ignore --break-system-packages .
 
     b. Restart FRR by running the following:
 
-       ```
+       ```bash
        sudo systemctl restart frr.service
        ```
 
@@ -116,5 +116,9 @@ sudo pip3 install --root-user-action ignore --break-system-packages .
    While much of it might not make sense just yet, you will be referring back
    to this as you work on the labs.
 
-2. Complete the five
+2. Complete the six
    [Working Examples](https://github.com/cdeccio/cougarnet/blob/main/README.md#working-examples)
+   Please note that you might not understand much what you are looking at in these exercises.
+   We will be covering these concepts in great detail in future coursework. The idea here is to
+   expose you to the Cougarnet framework and to make sure that your installation is working
+   properly.

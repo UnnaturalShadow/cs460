@@ -23,6 +23,7 @@ transport-layer multiplexing, and the TCP three-way handshake.
  - [Part 4 - ICMP Port Unreachable and TCP Reset (Extra Credit)](#part-4---icmp-port-unreachable-and-tcp-reset-extra-credit)
    - [Instructions](#instructions-3)
    - [Testing](#testing-2)
+ - [Evaluation](#evaluation)
  - [General Helps](#general-helps)
  - [Submission](#submission)
 
@@ -110,7 +111,7 @@ start it up:
 Run the following command:
 
 ```bash
-$ cougarnet --disable-ipv6 --display scenario1.cfg
+cougarnet --disable-ipv6 --display scenario1.cfg
 ```
 
 At this point, the only output will be log messages indicating that messages
@@ -150,130 +151,37 @@ are fleshed out for you, to give you an idea of how this should go.
 
 #### IPv4 Header
 
-Please note that the diagram describing the IPv4 header is 32 bits (columns)
-wide.
-<table border="1">
-<tr>
-<th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th>
-<th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
-<th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
-<th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th></tr>
-<tr>
-<td colspan="4">Version</td>
-<td colspan="4">IHL</td>
-<td colspan="8">Differentiated Services</td>
-<td colspan="16">Total length</td></tr>
-<tr>
-<td colspan="16">Identification</td>
-<td colspan="3">Flags</td>
-<td colspan="13">Fragment offset</td></tr>
-<tr>
-<td colspan="8">TTL</td>
-<td colspan="8">Protocol</td>
-<td colspan="16">Header checksum</td></tr>
-<tr>
-<td colspan="32">Source IP address</td></tr>
-<tr>
-<td colspan="32">Destination IP address</td></tr>
-<tr>
-<td colspan="32">Options and padding :::</td></tr>
-</table>
+See the [Networking Reference](../NETWORKING_REFERENCE.md#ipv4-header) for
+information on the IPv4 header format.
 
- - Version - IP version.  This will always be 4 for the IPv4 header.
- - IHL - Internet header length in 4-byte words.  The IPv4 header is 20 bytes long without
-   options, so this field will always be 5.
- - Differentiated Services - This will always be 0 for our purposes.
- - Total length - This is the length of the entire IP datagram, including IP header and payload.
- - Identification - The ID field for reassembling fragmented packets.  We will not be handling
-   fragmentation in this, so this field can be 0.
- - Flags - Same.
- - Fragment offset - Same.
- - TTL - Time-to-live value.  We will initialize this to 64 for any newly-create IPv4 packets.
- - Protocol - The protocol associated with the next header.  For example TCP (`IPPROTO_TCP = 6`)
-   or UDP (`IPPROTO_UDP = 17`).
- - Header checksum - The checksum of the IPv4 header.  For the purposes of this lab, we will not
-   be calculating a checksum, so 0 can be used here.
- - Source IP address
- - Destination IP address
- - Options and padding ::: - Not used.
+For this lab, the following IPv4 header fields will not be used and should be set to 0:
+ - DSCP
+ - ECN
+ - Identification 
+ - Flags
+ - Fragment Offset
+ - Checksum
+
+The Protocol field is the protocol of the header contained in the payload of
+the IP packet. For example, TCP (`IPPROTO_TCP = 6`) or UDP (`IPPROTO_UDP = 17`).
 
 #### UDP Header
 
-Please note that the diagram describing the UDP header is 32 bits (columns)
-wide.
-<table border="1">
-<tr>
-<th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th>
-<th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
-<th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
-<th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th></tr>
-<tr>
-<td colspan="16">Source Port</td>
-<td colspan="16">Destination Port</td></tr>
-<tr>
-<td colspan="16">Length</td>
-<td colspan="16">Checksum</td></tr>
-</table>
-
- - Source Port
- - Destination Port
- - Length - This is the length of the entire UDP datagram, including UDP header and payload.
- - Checksum - The checksum of a pseudo IPv4 header.  For the purposes of this lab, we will
-   not be calculating a UDP checksum, so 0 can be used here.
+See the [Networking Reference](../NETWORKING_REFERENCE.md#udp-header) for
+information on the UDP header format.
 
 #### TCP Header
 
-Please note that the diagram describing the TCP header is 32 bits (columns)
-wide.
-<table border="1">
-<tr>
-<th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th>
-<th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
-<th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
-<th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th></tr>
-<tr>
-<td colspan="16">Source Port</td>
-<td colspan="16">Destination Port</td></tr>
-<tr>
-<td colspan="32">Sequence Number</td></tr>
-<tr>
-<td colspan="32">Acknowledgment Number</td></tr>
-<tr>
-<td colspan="4">Data Offset</td>
-<td colspan="3">reserved</td>
-<td colspan="3">ECN</td>
-<td colspan="6">Control Bits</td>
-<td colspan="16">Window</td></tr>
-<tr>
-<td colspan="16">Checksum</td>
-<td colspan="16">Urgent Pointer</td></tr>
-<tr>
-<td colspan="32">Options and padding :::</td></tr>
-</table>
+See the [Networking Reference](../NETWORKING_REFERENCE.md#tcp-header) for 
+information on the TCP header format.
 
- - Source Port
- - Destination Port
- - Sequence Number
- - Acknowledgment Number
- - Data Offset - The length of the TCP header in 4-byte words.  The TCP header is
-   20 bytes long without options, so this field will always be 5.
- - reserved - always 0
- - ECN - Explicit Congestion Notification.  This will not be used in this lab,
-   so this field can always be 0.
- - Control Bits (flags) - Each flag is listed below from left to right (most
-   significant to least significant).  However, note that only the `SYN` and `ACK`
-   flags are likely to be used for this lab.
-   - `URG`
-   - `ACK`
-   - `PSH`
-   - `RST`
-   - `SYN`
-   - `FIN`
- - Window - the receive window advertised by the sending host.  We will not be using
-   this field in the lab, but 64 is a reasonable value for this field nonetheless.
- - Checksum - The checksum of a pseudo IPv4 header.  For the purposes of this lab, we will
-   not be calculating a TCP checksum, so 0 can be used here.
- - Urgent Pointer - Not used for this lab, so this field can always be 0.
+We note that we will not be adding any TCP options or padding to the header, so 
+the TCP header will be exactly 20 bytes long. The Data Offset field will then be 
+5, since that is the length of the 20-byte header in 4-byte words.
+
+For this lab, we will only be using the `SYN` and `ACK` flags for the Control 
+Bits (flags) field.  
+
 
 
 ### Step 2 - Complete and Tests Code against Unit Tests
@@ -410,7 +318,7 @@ At this point, you should be able to run the following command to run
 scenario 1:
 
 ```bash
-$ cougarnet --disable-ipv6 --display --wireshark=a-s1 scenario1.cfg
+cougarnet --disable-ipv6 --display --wireshark=a-s1 scenario1.cfg
 ```
 
 After a few seconds, you should see a log message indicating that host `a` is
@@ -460,7 +368,7 @@ you should see output for a similar exchange between hosts `c` and `b`.
 When it is working properly, test also with the `--terminal=none` option:
 
 ```bash
-$ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
+cougarnet --disable-ipv6 --terminal=none scenario1.cfg
 ```
 
 
@@ -641,7 +549,7 @@ At this point, you should be able to run the following command to run scenario
 2:
 
 ```bash
-$ cougarnet --disable-ipv6 --display --wireshark=a-s1 scenario2.cfg
+cougarnet --disable-ipv6 --display --wireshark=a-s1 scenario2.cfg
 ```
 After a few seconds, you should see log messages for packets the TCP SYN
 packets sent in the scenario, and you should also see those packets in the
@@ -692,9 +600,9 @@ should see output for a similar exchange between hosts `c` and `b`.
 When it is working properly, test also with the `--terminal=none` option, and
 make sure it works for both scenarios:
 
-```
-$ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
-$ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
+```bash
+cougarnet --disable-ipv6 --terminal=none scenario1.cfg
+cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 ```
 
 
@@ -718,22 +626,11 @@ messages and TCP Reset messages at the appropriate times and circumstances.
 
 In the file `headers.py`, create a class `ICMPHeader` with both `from_bytes()`
 and `to_bytes()` methods, similar to those you created for IPv4 and TCP in
-Part 1.  A diagram of the ICMP header used for the Destination Unreachable type
-is below.  Please note that the diagram describing the IPv4 header is 32 bits
-(columns) wide.
-<table border="1">
-<tr>
-<th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th>
-<th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
-<th>16</th><th>17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
-<th>24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th>31</th></tr>
-<tr>
-<td colspan="8">Type</td>
-<td colspan="8">Code</td>
-<td colspan="16">ICMP header checksum</td></tr>
-<tr><td colspan="32">Unused</td></tr>
-</table>
-</table>
+Part 1. See the [Networking Reference](../NETWORKING_REFERENCE.md#icmp-header)
+for information on the ICMP header format. 
+
+We also note that the 4-byte "message-specific fields and data" portion of the ICMP 
+header will be unused for this lab and each byte of the portion should be set to 0.
 
 In the file `test_headers.py` create a method `test_icmp_header()`, which tests
 both the `ICMPHeader.to_bytes()` and `ICMPHeader.from_bytes()` methods.  Use
@@ -765,15 +662,12 @@ python3 -m unittest test_headers.py
 
 ### ICMP Port Unreachable
 
-Whenever a UDP packet arrives for which there is no matching socket, return an
-ICMP message to the sender with the following characteristics:
-
- - type: 3 (Destination unreachable)
- - code: 3 (Destination port unreachable)
- - checksum: 0
- - unused: 0
- - payload: the UDP datagram that was received by the host, complete with its
-   original IP and UDP headers
+Whenever a UDP packet arrives for which there is no matching socket, return a
+"Port Unreachable" ICMP message. The ICMP message should have an ICMP header and a
+payload containing the UDP datagram that was received by the host, complete with 
+its original IP and UDP headers. You should refer to the 
+[Networking Reference](../NETWORKING_REFERENCE.md#icmp-header) for what values to 
+use in the ICMP header fields.
 
 
 ### TCP Reset
@@ -789,10 +683,23 @@ Test your implementation against scenarios 1 and 2.  Where you previously
 received no response from the server after sending a packet that did not match
 any socket, you should now see responses from the server.
 
+```bash
+cougarnet --disable-ipv6 --terminal=none scenario1.cfg
+cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 ```
-$ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
-$ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
-```
+
+
+# Evaluation
+
+Your score will be computed out of a maximum of 100 points based on the
+following distribution:
+
+ - Part 1: 68 points (+4 points extra credit)
+   - 34 points for scenario 1 (+2 points extra credit)
+   - 34 points for scenario 2 (+2 points extra credit)
+ - Part 2: 32 points (+2 points extra credit)
+   - 16 points for correct unit test contents (+1 point extra credit)
+   - 16 points for correct unit test results (+1 point extra credit)
 
 
 # General Helps
@@ -814,7 +721,7 @@ Use the following commands to create a directory, place your working files in
 it, and tar it up:
 
 ```bash
-$ mkdir transport-lab
-$ cp headers.py test_headers.py transporthost.py mysocket.py transport-lab
-$ tar -zcvf transport-lab.tar.gz transport-lab
+mkdir transport-lab
+cp headers.py test_headers.py transporthost.py mysocket.py transport-lab
+tar -zcvf transport-lab.tar.gz transport-lab
 ```

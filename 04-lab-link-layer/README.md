@@ -64,8 +64,8 @@ The files given to you for this lab are the following:
 Take a look at the contents of `scenario1a.cfg`.  Then run the following to
 start it up:
 
-```
-$ cougarnet --display --disable-ipv6 scenario1a.cfg
+```bash
+cougarnet --display --disable-ipv6 scenario1a.cfg
 ```
 
 The `--disable-ipv6` option is used on the command line here and throughout the
@@ -109,8 +109,8 @@ frames (and later packets) is part of the learning activities.
 Now look at the contents of `scenario1.cfg`, and run the following to start it
 up:
 
-```
-$ cougarnet --display --disable-ipv6 scenario1.cfg
+```bash
+cougarnet --display --disable-ipv6 scenario1.cfg
 ```
 
 It is similar in some senses, but very different in some others.  Note the
@@ -125,7 +125,7 @@ that it is seeing on its interfaces.  You can see this in `switch.py`:
 
 ```python
 def _handle_frame(self, frame, intf):
-    print('Received frame: %s' % repr(frame))
+    print('Received frame: %s' % frame.hex(' '))
 ```
 
 Your job, of course, is to modify the behavior of `_handle_frame()` in
@@ -281,20 +281,27 @@ Then implement a basic switch in `switch.py` with the following functionality:
  - A broadcast frame (i.e., having destination MAC address `ff:ff:ff:ff:ff:ff`)
    is forwarded as-is to all interfaces, except that from which it originated.
 
-Note that it might be easiest to start with basic switch functionality, then
-implement the aging time.  See the [Help](#helps) section for an
-[Ethernet frame reference](#ethernet-frames), as well as implementation tips
-and examples.
+Use the following hints for getting started:
 
-Test your implementation against scenarios 1 and 2.  Determine the appropriate
-output--that is, which hosts should receive which frames--and make sure that
-the output for your switch implementation matches appropriately.
+ - Look at the example from the Cougarnet documentation involving a
+   [custom hub](https://github.com/cdeccio/cougarnet/blob/main/README.md#three-hosts-connected-by-a-custom-hub).
+   That provides a working example of handling incoming frames and sending
+   outgoing frames.
+ - Start with basic switch functionality, then implement the aging time.
+ - See the [Help](#helps) section for an
+   [Ethernet frame reference](#ethernet-frames), as well as implementation tips
+   and examples.
+
+Test your implementation against scenarios 1 and 2 (i.e., using `scenario1.cfg`
+and `scenario2.cfg`).  Determine the appropriate output--that is, which hosts
+should receive which frames--and make sure that the output for your switch
+implementation matches appropriately.
 
 When it is working properly, test also with the `--terminal=none` option:
 
-```
-$ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
-$ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
+```bash
+cougarnet --disable-ipv6 --terminal=none scenario1.cfg
+cougarnet --disable-ipv6 --terminal=none scenario2.cfg
 ```
 
 You can also use the driver provided for
@@ -322,17 +329,14 @@ Now add implementation for VLANs and trunking according to the following:
    and used to determine the interface(s) (if any) to which the frame should be
    forwarded.
 
-Note that when a switch is initialized, it is populated with information about
-each interface, including the VLAN it is associated with.  You can retrieve a
-list of objects containing information for all "physical" interfaces on the
-system with the `physical_interfaces_info()` method of your Switch instance
-(inherited from the `BaseHost` class).  You can access the MAC address and
-interface name associated with each interface by accessing using
-dictionary-like syntax on the object: `myobj['address']` and `myobj['ifname']`.
-You can use the `int_to_vlan` attribute to map an interface name to the
-VLAN for that interface, and the `is_trunk_link()` method will identify a trunk
-link. More information can be found in the
-[documentation](https://github.com/cdeccio/cougarnet/blob/main/README.md#sending-and-receiving-frames).
+Note that when a switch is created, it contains information about each
+interface, including the VLAN it is associated with.  You can retrieve a
+list of all the switch's interfaces with the `physical_interfaces()` method of
+your Switch instance (inherited from the `BaseHost` class).  You can use the
+`int_to_vlan` attribute to map an interface name to the VLAN for that
+interface, and the `is_trunk_link()` method will identify a trunk link. More
+information can be found in the
+[documentation](https://github.com/cdeccio/cougarnet/blob/main/README.md#basehost-api).
 
 See the [Help](#helps) section for more, including an
 [802.1Q frame reference](#ethernet-frames), and implementation tips and
@@ -352,10 +356,10 @@ scenarios 1 and 2, without having to make any special provisions.
 When your switch implementation is working properly, test all three scenarios
 with the `--terminal=none` option:
 
-```
-$ cougarnet --disable-ipv6 --terminal=none scenario1.cfg
-$ cougarnet --disable-ipv6 --terminal=none scenario2.cfg
-$ cougarnet --disable-ipv6 --terminal=none scenario3.cfg
+```bash
+cougarnet --disable-ipv6 --terminal=none scenario1.cfg
+cougarnet --disable-ipv6 --terminal=none scenario2.cfg
+cougarnet --disable-ipv6 --terminal=none scenario3.cfg
 ```
 
 You can also use the driver provided for
@@ -369,9 +373,19 @@ testing.  This is not a replacement for manual testing but can be used as a
 sanity check.  You can use it by simply running the following in the working
 directory:
 
-```
+```bash
 ./driver.py
 ```
+
+Note that the driver can produce inconsistent results. Please know that *we
+will use great care in grading*, and if you have concerns you can reach out to
+the professor or the TAs.
+
+If you're having issues with the driver, you can run the driver in verbose mode
+by adding the `-v` option to the command above. This prints your Cougarnet
+output along with your results.  You can also add the `--terminal` option and
+open terminals for the virtual hosts while the driver runs.
+
 
 # Evaluation
 
@@ -390,11 +404,10 @@ following distribution:
 ## Ethernet Frames
 
 Your code will need to parse Ethernet frames from the "wire" as `bytes`
-instances.  The frame that you will be receiving looks like this:
-
-| Destination MAC Addr | Source MAC Addr | EtherType | Payload |
-| :---: | :---: | :---: | :---: |
-| (48 bits) | (48 bits) | (16 bits) | (variable) |
+instances. See the [Networking Reference](../NETWORKING_REFERENCE.md#ethernet) for
+information on the standard Ethernet frame format. You will also be working with
+802.1Q Ethernet frames. Information on the 802.1Q frame format is also found in
+the [Networking Reference](../NETWORKING_REFERENCE.md#8021q-vlan-ethernet-frame).
 
 Note that a complete Ethernet frame also has fields for preamble and Cyclic
 Redundancy Check (CRC) when it actually travels on the wire.  However, these
@@ -402,19 +415,9 @@ frames are read from a raw socket (i.e., of type `SOCK_RAW`, as opposed to
 `SOCK_STREAM` or `SOCK_DGRAM`), and those two fields are stripped before it is
 passed to the application.
 
-In the case of 802.1Q, the frame will look like this:
-
-| Destination MAC Addr | Source MAC Addr | 802.1Q Header | EtherType | Payload |
-| :---: | :---: | :---: | :---: | :---: |
-| (48 bits) | (48 bits) | (32 bits) | (16 bits) | (variable) |
-
-The most signficant (left-most) 16 bits of the 802.1Q header should have the
-value 0x8100 to indicate that it is an 802.1Q frame.  The least significant
-(right-most) 12 bits of the 802.1Q header should contain the value of the VLAN
-ID.  The 4 bits in between can be left as zero.
-
 Note that there are libraries, including scapy, for parsing Ethernet frames and
 higher-level packets, but you may not use them for the lab.
+
 
 
 ## Working with `bytes` Instances
@@ -433,67 +436,50 @@ The `b` prefix is always used with `bytes` objects to distinguish them from
 notation indicates that the next two characters are hexadecimal values
 containing the actual value of the byte.
 
+Note that you can present them in a more readable manner, using `.hex()` (with
+optional separator as an argument).  For example:
+
+```python
+>>> bytes1.hex(' ')
+'01 02 03 04 0a 0b 0c 0d'
+>>> bytes2.hex(' ')
+'05 06 07 08 09'
+```
+
 A "slice" of `bytes` objects produces a new `bytes` object with only the
 designated sequence.  For example, the following gets only the first two bytes
 of `bytes1` (i.e., indexes 0 and 1):
 
 ```python
->>> bytes1[:2]
-b'\x01\x02'
+>>> bytes1[:2].hex(' ')
+'01 02'
 ```
 
 Likewise, the following gets only the fifth and sixth bytes of `bytes1` (i.e.,
 indexes 4 and 5):
 
 ```python
->>> bytes1[4:6]
-b'\n\x0b'
+>>> bytes1[4:6].hex(' ')
+'0a 0b'
 ```
 
 `bytes` objects can be concatenated together to yield a new `bytes` object:
 
 ```python
->>> bytes1 + bytes2
-b'\x01\x02\x03\x04\n\x0b\x0c\r\x05\x06\x07\x08\t'
+>>> (bytes1 + bytes2).hex(' ')
+'01 02 03 04 0a 0b 0c 0d 05 06 07 08 09'
 ```
 
 Or even:
 
 ```python
->>> bytes1[:2] + bytes1[4:6]
-b'\x01\x02\n\x0b'
-```
-
-Printing out the representation of `bytes` objects can be a bit confusing.  For
-example:
-
-```python
->>> bytes1[4:6]
-b'\n\x0b'
-```
-
-In this case, `\n` is the ASCII equivalent of hexadecimal 0xa (i.e., `\x0a`) or
-decimal 10.  To be "helpful", Python prints out the ASCII equivalent.
-
-To print out everything as hexademical, use the `binascii` module:
-
-```python
->>> import binascii
->>> binascii.hexlify(bytes1[4:6])
-b'0a0b'
-```
-
-Note that the result is still a `bytes` object.  To convert to `str`, use the
-`decode` method:
-
-```python
->>> binascii.hexlify(bytes1[4:6]).decode('latin1')
-'0a0b'
+>>> (bytes1[:2] + bytes1[4:6]).hex(' ')
+'01 02 0a 0b'
 ```
 
 Finally, to convert `bytes` objects to integers, use the `struct` module.  For
 example, to put the first two bytes from a `bytes` sequence (`bytes1`) into a
-short (two-byte) integer:
+short (two-byte) integer, use `struct.unpack()`:
 
 ```python
 >>> import struct
@@ -519,37 +505,36 @@ two one-byte integers (equivalent to `unsigned char` in C):
 '02'
 ```
 
-To convert a short (two-byte) integer to a `bytes` object:
+To convert a short (two-byte) integer to a `bytes` object, use `struct.pack()`:
 
 ```python
->>> struct.pack('!H', 0x0102)
-b'\x01\x02'
+>>> struct.pack('!H', 0x0102).hex(' ')
+'01 02'
 ```
 
 or:
 
 ```python
->>> struct.pack('!H', 258)
-b'\x01\x02'
+>>> struct.pack('!H', 258).hex(' ')
+'01 02'
 ```
 
 To convert two one-byte integers to a `bytes` object:
 
 ```python
->>> struct.pack('!BB', 0x1, 0x2)
-b'\x01\x02'
+>>> struct.pack('!BB', 0x1, 0x2).hex(' ')
+'01 02'
 ```
 
 or:
 
 ```python
->>> struct.pack('!BB', 1, 2)
-b'\x01\x02'
+>>> struct.pack('!BB', 1, 2).hex(' ')
+'01 02'
 ```
 
 For more info see the following:
  - [`bytes` documentation](https://docs.python.org/3/library/stdtypes.html#binary-sequence-types-bytes-bytearray-memoryview)
- - [`binascii` documentation](https://docs.python.org/3/library/binascii.html)
  - [`struct` documentation](https://docs.python.org/3/library/struct.html)
 
 
@@ -562,7 +547,7 @@ explains how frames can be sent and received using the methods provided by the
 `_handle_frame()`, and `send_frame()` methods very useful.  These methods are
 demonstrated in a working example of a hub (`class Hub`), which forwards frames
 like a switch but does not learn outgoing ports associated with MAC addresses (see the
-[documentation](https://github.com/cdeccio/cougarnet/blob/main/README.md#sending-and-receiving-frames)).
+[documentation](https://github.com/cdeccio/cougarnet/blob/main/README.md#hub-example)).
 
 
 ## Other Helps

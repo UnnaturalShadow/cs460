@@ -26,13 +26,13 @@ application-layer protocols such as HTTP, DNS, and SMTP.
     `/etc/hosts.bak`:
  
     ```bash
-    $ sudo cp -pr /etc/hosts{,.bak}
+    sudo cp -pr /etc/hosts{,.bak}
     ```
 
     Now open `/etc/hosts` with root privileges, e.g.:
 
     ```bash
-    $ sudo -e /etc/hosts
+    sudo -e /etc/hosts
     ```
 
     Modify the first line so it looks like this:
@@ -52,7 +52,7 @@ application-layer protocols such as HTTP, DNS, and SMTP.
  2. Begin Packet Capture.  Open Wireshark:
 
     ```bash
-    $ wireshark
+    wireshark
     ```
 
     Enter "port 8000" into the capture filter field field.  Then double-click
@@ -65,7 +65,7 @@ application-layer protocols such as HTTP, DNS, and SMTP.
     CGI-enabled from within the homework directory:
 
     ```bash
-    $ python3 -m http.server --cgi
+    python3 -m http.server --cgi
     ```
 
  4. Open Web Browser.  Open firefox, and clear all of its cache.
@@ -88,7 +88,7 @@ application-layer protocols such as HTTP, DNS, and SMTP.
  6. "Update" `test.txt` by running the following command:
 
     ```bash
-    $ touch test.txt
+    touch test.txt
     ```
     (The `touch` command simply updates the timestamp of the specified file, so
     it appears newer.)
@@ -117,12 +117,13 @@ Answer the following questions, using the streams corresponding to the HTTP
 requests and responses issued above.  For each question that asks "why",
 provide a brief but specific explanation.
  
- 1. In HTTP request 1, what was the domain sent by the client in the Host
-    header of the HTTP request?
+ 1. In HTTP request 1, what was the domain domain sent by the client in the
+    Host header of the HTTP request?  (Note: consider only the domain name, not
+    the port, if one is specified.)
  2. In HTTP request 1, was a cookie sent by the client?  Why or why not?
  3. In HTTP request 1, what was the "domain" attribute in the cookie returned
     by the server?
- 4. In HTTP request 2, what was the domain sent by the client in the Host
+ 4. In HTTP request 2, what was the domain name sent by the client in the Host
     header of the HTTP request?
  5. In HTTP request 2, was the cookie sent by the client?  What does the answer
     (yes/no) tell you about the ability or inability of the server to set a
@@ -130,7 +131,7 @@ provide a brief but specific explanation.
     domain name in the URL)?
  6. In HTTP request 2, what was the "domain" attribute in the cookie returned
     by the server?
- 7. In HTTP request 3, what was the domain sent by the client in the Host
+ 7. In HTTP request 3, what was the domain name sent by the client in the Host
     header of the HTTP request?
  8. In HTTP request 3, was the cookie sent by the client?  What does the answer
     (yes/no) tell you about the ability or inability of the server to set a
@@ -162,7 +163,7 @@ provide a brief but specific explanation.
 
  1. Revert to your backup of `/etc/hosts`:
 
-    ```
+    ```bash
     sudo mv /etc/hosts{.bak,}
     ```
 
@@ -187,20 +188,20 @@ depending on the presence of the `-l` option.  When the script is run with the
     Run the following command to create and start the network:
 
     ```bash
-    $ cougarnet --display --wireshark=a-b h2-s1.cfg
+    cougarnet --display --wireshark=a-b h2-s1.cfg
     ```
 
  2. Start and interact with an echo server. Run the following on host `b` to
     start the echo server:
 
     ```bash
-    b$ python3 tfo_echo.py -l 5599
+    python3 tfo_echo.py -l 5599
     ```
 
     On host `a`, running the following to run the client:
 
     ```bash
-    a$ python3 tfo_echo.py 10.0.0.2 5599 foobar
+    python3 tfo_echo.py 10.0.0.2 5599 foobar
     ```
 
 
@@ -233,7 +234,7 @@ Use `Ctrl`-`c` on host `b` to interrupt the running echo server.  Then run
 the following on both host `a` and host `b`:
 
 ```bash
-$ sudo sysctl net.ipv4.tcp_fastopen=3
+sudo sysctl net.ipv4.tcp_fastopen=3
 ```
 
 Depending on the value passed to the `net.ipv4.tcp_fastopen` value, TFO might
@@ -245,14 +246,14 @@ Restart the server on host `b` with the following command (note the presence of
 the `-f` option):
 
 ```bash
-b$ python3 tfo_echo.py -f -l 5599
+python3 tfo_echo.py -f -l 5599
 ```
 
 Now run the client again on host `a` with the following command (note the
 presence of the `-f` option):
 
 ```bash
-a$ python3 tfo_echo.py -f 10.0.0.2 5599 foobar
+python3 tfo_echo.py -f 10.0.0.2 5599 foobar
 ```
 
 
@@ -267,13 +268,13 @@ recent test.
 Finally, restart the server on host `b` with the following command:
 
 ```bash
-b$ python3 tfo_echo.py -f -l 5599
+python3 tfo_echo.py -f -l 5599
 ```
 
 Then run the following again:
 
 ```bash
-a$ python3 tfo_echo.py -f 10.0.0.2 5599 foobar
+python3 tfo_echo.py -f 10.0.0.2 5599 foobar
 ```
 
 
@@ -294,10 +295,11 @@ This part is an exercise to help you understand SMTP.
 
 ## Getting Started
 
- 1. Install swaks (Swiss Army Knife SMTP). Run the following to install swaks:
+ 1. Install swaks (Swiss Army Knife SMTP) and aiosmtpd, a python-based SMTP
+    server. Run the following to install these packages:
 
-    ```
-    sudo apt install swaks
+    ```bash
+    sudo apt install swaks python3-aiosmtpd
     ```
 
  2. Start cougarnet.  File `h2-s1.cfg` contains a configuration file that
@@ -309,10 +311,10 @@ This part is an exercise to help you understand SMTP.
     cougarnet --display --wireshark=a-b h2-s1.cfg
     ```
 
- 3. Start a "debugging" SMTP server on host `b`:
+ 3. Start an SMTP server on host `b`:
 
     ```bash
-    b$ sudo python3 -m smtpd -n --class DebuggingServer 0.0.0.0:25
+    sudo python3 -m aiosmtpd -n -l 0.0.0.0:25
     ```
 
     This Python SMTP server simply interacts with clients over SMTP and prints
@@ -322,14 +324,14 @@ This part is an exercise to help you understand SMTP.
     message from host `a` to host `b`:
 
     ```bash
-    a$ swaks --server 10.0.0.2 --to joe@example.com
+    swaks --server 10.0.0.2 --to joe@example.com
     ```
 
  5. Send a message with attachment.  On host `a`, execute the following to send
     an email message with an attachment from host `a` to host `b`:
 
     ```bash
-    a$ swaks --server 10.0.0.2 --attach byu-y-mtn2.jpg --to joe@example.com
+    swaks --server 10.0.0.2 --attach byu-y-mtn2.jpg --to joe@example.com
     ```
 
  6. Follow TCP Streams.  For the emails sent in #5 and #6, open the
