@@ -2,8 +2,10 @@
 
 import argparse
 import asyncio
+import json
 import os
 import socket
+import struct
 import sys
 
 from cougarnet.sim.host import BaseHost
@@ -34,13 +36,37 @@ class Host(BaseHost):
 
         self._ip_forward = ip_forward
 
-        # do any additional initialization here
+        self._arp_table = {}
+        self._pending_packets = []
+        self._forwarding_table = ForwardingTable()
+        for intf in self.physical_interfaces():
+            self._forwarding_table.add_entry(self.prefix_for_int(intf), intf, None)
+        for prefix, intf, next_hop in json.loads(os.environ.get('COUGARNET_ROUTES', '[]')):
+            self._forwarding_table.add_entry(prefix, intf, next_hop)
 
     def _handle_frame(self, frame: bytes, intf: str) -> None:
-        pass
+        if len(frame) < 14:
+            return
+        local_mac = mac_str_to_binary(self.interface_info_single(intf)['address'])
+        if frame[:6] not in (local_mac, b'\xff' * 6):
+            self.not_my_frame(frame, intf)
+            return
+        ethertype = int.from_bytes(frame[12:14], 'big')
+        if ethertype == ETH_P_IP:
+            self.handle_ip(frame[14:], intf)
+        elif ethertype == ETH_P_ARP:
+            self.handle_arp(frame[14:], intf)
 
     def handle_ip(self, pkt: bytes, intf: str) -> None:
-        pass
+        if len(pkt) < 20:
+            return
+        destination = ip_binary_to_str(pkt[16:20])
+        if destination not in self.ipv4_addresses():
+            self.not_my_packet(pkt, intf)
+        elif pkt[9] == IPPROTO_TCP:
+            self.handle_tcp(pkt)
+        elif pkt[9] == IPPROTO_UDP:
+            self.handle_udp(pkt)
 
     def handle_tcp(self, pkt: bytes) -> None:
         pass
@@ -49,28 +75,75 @@ class Host(BaseHost):
         pass
 
     def handle_arp(self, pkt: bytes, intf: str) -> None:
-        pass
+        if len(pkt) < 28:
+            return
+        hardware, protocol, hlen, plen, opcode = struct.unpack('!HHBBH', pkt[:8])
+        if (hardware, protocol, hlen, plen) != (ARPHRD_ETHER, ETH_P_IP, 6, 4):
+            return
+        if opcode == ARPOP_REQUEST:
+            self.handle_arp_request(pkt, intf)
+        elif opcode == ARPOP_REPLY:
+            self.handle_arp_response(pkt, intf)
 
     def handle_arp_response(self, pkt: bytes, intf: str) -> None:
-        pass
+        sender_ip = ip_binary_to_str(pkt[14:18])
+        self._arp_table[sender_ip] = mac_binary_to_str(pkt[8:14])
+        pending = self._pending_packets
+        self._pending_packets = []
+        for packet, outgoing, next_hop in pending:
+            if next_hop == sender_ip:
+                self.send_packet_on_int(packet, outgoing, next_hop)
+            else:
+                self._pending_packets.append((packet, outgoing, next_hop))
 
     def handle_arp_request(self, pkt: bytes, intf: str) -> None:
-        pass
+        sender_mac = pkt[8:14]
+        sender_ip = pkt[14:18]
+        target_ip = pkt[24:28]
+        self._arp_table[ip_binary_to_str(sender_ip)] = mac_binary_to_str(sender_mac)
+        if ip_binary_to_str(target_ip) not in self.ipv4_addresses(intf):
+            return
+        local_mac = mac_str_to_binary(self.interface_info_single(intf)['address'])
+        reply = struct.pack('!HHBBH', ARPHRD_ETHER, ETH_P_IP, 6, 4, ARPOP_REPLY)
+        reply += local_mac + target_ip + sender_mac + sender_ip
+        frame = sender_mac + local_mac + struct.pack('!H', ETH_P_ARP) + reply
+        self.send_frame(frame, intf)
 
     def send_packet_on_int(self, pkt: bytes, intf: str, next_hop: str) -> None:
-        print(f'Attempting to send packet on {intf} with next hop {next_hop}:\n{repr(pkt)}')
+        local_mac = mac_str_to_binary(self.interface_info_single(intf)['address'])
+        if next_hop in self._arp_table:
+            destination = mac_str_to_binary(self._arp_table[next_hop])
+            frame = destination + local_mac + struct.pack('!H', ETH_P_IP) + pkt
+            self.send_frame(frame, intf)
+            return
+
+        self._pending_packets.append((pkt, intf, next_hop))
+        local_ip = ip_str_to_binary(self.ipv4_address_info_single(intf)['address'])
+        request = struct.pack('!HHBBH', ARPHRD_ETHER, ETH_P_IP, 6, 4, ARPOP_REQUEST)
+        request += local_mac + local_ip + b'\x00' * 6 + ip_str_to_binary(next_hop)
+        frame = b'\xff' * 6 + local_mac + struct.pack('!H', ETH_P_ARP) + request
+        self.send_frame(frame, intf)
 
     def send_packet(self, pkt: bytes) -> None:
-        print(f'Attempting to send packet:\n{repr(pkt)}')
+        if len(pkt) < 20:
+            return
+        destination = ip_binary_to_str(pkt[16:20])
+        intf, next_hop = self._forwarding_table.get_entry(destination)
+        if intf is not None:
+            self.send_packet_on_int(pkt, intf, destination if next_hop is None else next_hop)
 
     def forward_packet(self, pkt: bytes) -> None:
-        pass
+        if len(pkt) < 20 or pkt[8] <= 1:
+            return
+        pkt = pkt[:8] + bytes([pkt[8] - 1]) + pkt[9:]
+        self.send_packet(pkt)
 
     def not_my_frame(self, frame: bytes, intf: str) -> None:
         pass
 
     def not_my_packet(self, pkt: bytes, intf: str) -> None:
-        pass
+        if self._ip_forward:
+            self.forward_packet(pkt)
 
     def prefix_for_int(self, intf: str) -> str:
         obj = self.ipv4_address_info_single(intf)

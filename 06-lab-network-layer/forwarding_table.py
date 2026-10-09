@@ -13,24 +13,26 @@
 
 Test the ForwardingTable.get_entry() method
 >>> table.get_entry('10.20.0.25')
-('someintf', 'someip')
+('r1-g', '10.30.0.18')
 >>> table.get_entry('10.20.0.34')
-('someintf', 'someip')
+('r1-f', '10.30.0.14')
 >>> table.get_entry('10.20.1.20')
-('someintf', 'someip')
+('r1-c', '10.30.0.2')
 >>> table.get_entry('10.20.3.1')
-('someintf', 'someip')
+('r1-k', '10.30.0.34')
 >>> table.get_entry('10.20.0.2')
-('someintf', 'someip')
+('r1-j', '10.30.0.30')
 >>> table.get_entry('10.20.0.11')
-('someintf', 'someip')
+('r1-h', '10.30.0.22')
 >>> table.get_entry('10.20.0.150')
-('someintf', 'someip')
+('r1-d', '10.30.0.6')
 >>> table.get_entry('10.20.0.7')
-('someintf', 'someip')
+('r1-i', '10.30.0.26')
 >>> table.get_entry('10.20.0.75')
-('someintf', 'someip')
+('r1-e', '10.30.0.10')
 '''
+
+import socket
 
 from prefix import Prefix
 
@@ -71,8 +73,14 @@ class ForwardingTable(object):
         address.  The entry is a tuple consisting of interface and
         next-hop IP address.  If there is no match, return None, None.'''
 
-        #FIXME - complete the rest of the method
-        return None, None
+        family = socket.AF_INET6 if ':' in address else socket.AF_INET
+        best_length = -1
+        best_entry = (None, None)
+        for prefix, entry in self.entries.items():
+            if prefix.family == family and prefix.prefix_len > best_length and address in prefix:
+                best_length = prefix.prefix_len
+                best_entry = entry
+        return best_entry
 
     def get_all_entries(self, family: int=None,
             resolve: bool=False, global_only: bool=True):
