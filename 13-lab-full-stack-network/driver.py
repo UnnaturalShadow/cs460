@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import re
 import signal
@@ -24,6 +25,10 @@ INTERVAL = 1.0
 class Lab6Tester:
     cmd = []
     expected_observations = []
+
+    def __init__(self, verbosity: int = 0, terminal: str|None = None):
+        self.verbosity = verbosity
+        self.terminal = terminal
 
     def evaluate(self, iteration, time_seen, observations):
         raise NotImplemented
@@ -122,6 +127,9 @@ class Lab6Tester:
 
     def run(self):
         p = None
+        if self.terminal is not None:
+            self.cmd[3] = f"--terminal={self.terminal}"
+        
         try:
             p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE)
             p.wait()
@@ -132,7 +140,14 @@ class Lab6Tester:
 
         output = p.stdout.read().decode('utf-8')
         output_lines = output.splitlines()
-        return self.evaluate_lines(output_lines)
+        eval_result = self.evaluate_lines(output_lines)
+        if self.verbosity < 0:  # --quiet
+            return eval_result
+        if self.verbosity > 0 or eval_result[0] < eval_result[1]:
+            sys.stderr.write("Your Cougarnet output:\n")
+            sys.stderr.write(output.rstrip())
+            sys.stderr.write("\nEnd of Cougarnet output\n")
+        return eval_result
 
 class Scenario5(Lab6Tester):
     cmd = ['cougarnet', '--stop=20', '--disable-ipv6',
@@ -142,8 +157,8 @@ class Scenario5(Lab6Tester):
 
     HOST_TCP_MSG_RE = re.compile(r'^Received ' + TCP_MSG_STR + '$')
 
-    def __init__(self):
-        super()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.eval_count = 0
         self.seq = {}
         self.participants = [
@@ -399,12 +414,28 @@ class Scenario5(Lab6Tester):
                                        self.participants[curr])
                             
 def main():
+    parser = argparse.ArgumentParser(
+        description="Test and grading driver for the full-stack network lab."
+    )
+    parser.add_argument("-v", "--verbose", action="count", default=0, 
+                        help="Increase verbosity level and display Cougarnet output.")
+    parser.add_argument("-q", "--quiet", action="store_true", 
+                        help="Only display driver output. Do not display Cougarnet output.")
+    parser.add_argument('--terminal',
+            action='store', type=str, default=None,
+            metavar='HOSTNAMES',
+            help='Specify which virtual Cougarnet hosts should launch a terminal ' + \
+                    '(all|none|host1[,host2,...])')
+    args = parser.parse_args(sys.argv[1:])
+
     try:
-        for scenario in Scenario5,:
-            print(f'Running {scenario.__name__}...')
-            tester = scenario()
-            success, total = tester.run()
-            sys.stderr.write(f'  Result: {success}/{total}\n')
+        print(f'Running {Scenario5.__name__}...')
+        tester = Scenario5(
+            verbosity=(-1 if args.quiet else args.verbose), 
+            terminal=args.terminal
+        )
+        success, total = tester.run()
+        sys.stderr.write(f'  Result: {success}/{total}\n')
     except KeyboardInterrupt:
         sys.stderr.write('Interrupted\n')
     sys.stderr.write('''PLEASE NOTE: this driver shows the result of the

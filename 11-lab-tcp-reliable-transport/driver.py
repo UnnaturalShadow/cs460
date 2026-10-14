@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import re
 import signal
@@ -16,6 +17,10 @@ class Lab5Tester:
     maxtime = None
     sha1output = None
     downloads_dir = 'downloads'
+
+    def __init__(self, verbosity: int = 0, terminal: str|None = None):
+        self.verbosity = verbosity
+        self.terminal = terminal
 
     def evaluate(self, lines):
         tcp_status = {}
@@ -72,9 +77,11 @@ class Lab5Tester:
         return 1, 1
 
     def run(self):
+        p = None
+        if self.terminal is not None:
+            self.cmd[2] = f"--terminal={self.terminal}"
         sys.stderr.write('running %s\n' % self.cmd)
 
-        p = None
         try:
             p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE)
             p.wait()
@@ -85,7 +92,12 @@ class Lab5Tester:
 
         output = p.stdout.read().decode('utf-8')
         output_lines = output.splitlines()
-        return self.evaluate(output_lines)
+        eval_result = self.evaluate(output_lines)
+        if self.verbosity > 0:
+            sys.stderr.write("Your Cougarnet output:\n")
+            sys.stderr.write(output.rstrip())
+            sys.stderr.write("\nEnd of Cougarnet output\n")
+        return eval_result
 
 class Scenario1(Lab5Tester):
     cmd = ['cougarnet', '--stop=10', '--terminal=none', '--vars',
@@ -152,11 +164,33 @@ class Scenario8(Lab5Tester):
     maxtime = 30
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Test and grading driver for the TCP reliable transport lab."
+    )
+    parser.add_argument("-v", "--verbose", action="count", default=0, 
+                        help="Increase verbosity level and display Cougarnet output.")
+    parser.add_argument("-s", "--scenario", type=int, nargs="*", choices=range(1,9),
+                        help="Run the specified scenarios. If not given, then all scenarios are run.")    
+    parser.add_argument('--terminal',
+            action='store', type=str, default=None,
+            metavar='HOSTNAMES',
+            help='Specify which virtual Cougarnet hosts should launch a terminal ' + \
+                    '(all|none|host1[,host2,...])')
+    args = parser.parse_args(sys.argv[1:])
+
+    if args.scenario is not None:
+        scenarios = [globals()[f"Scenario{s}"] for s in list(dict.fromkeys(args.scenario))]
+    else:
+        scenarios = [Scenario1, Scenario2, Scenario3, Scenario4,
+                     Scenario5, Scenario6, Scenario7, Scenario8]
+
     try:
-        for scenario in (Scenario1, Scenario2, Scenario3, Scenario4,
-                         Scenario5, Scenario6, Scenario7, Scenario8):
+        for scenario in scenarios:
             print(f'Running {scenario.__name__}...')
-            tester = scenario()
+            tester = scenario(
+                verbosity=args.verbose,
+                terminal=args.terminal
+            )
             success, total = tester.run()
             sys.stderr.write(f'  Result: {success}/{total}\n')
     except KeyboardInterrupt:
