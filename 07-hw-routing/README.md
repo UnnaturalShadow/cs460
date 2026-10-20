@@ -40,7 +40,7 @@ Then try running the scenario again.
 
 The network is illustrated in the following diagram:
 
-![bgp.cfg](bgp-network.png)
+![bgp.cfg](bgp-diagram.png)
 
 Note the following in the diagram:
 
