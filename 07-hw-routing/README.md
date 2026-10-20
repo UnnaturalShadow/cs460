@@ -92,8 +92,8 @@ left of "Network" indiciates that that route was selected as the "best" or
 
 For convenience, the following is a mapping for "Next Hop" addresses shown:
 
- - 10.10.0.14 refers to `w1` (or `a3`)
- - 10.10.0.18 refers to `z1` (or `a4`)
+ - 10.10.0.14 is the IP address for `w1` (connected to border router `a3`)
+ - 10.10.0.18 is the IP address for `z1` (connected to border router `a4`)
 
  3. How many routes are shown for 10.50.0.0/16?
 
