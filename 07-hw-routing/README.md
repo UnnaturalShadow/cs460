@@ -99,7 +99,8 @@ For convenience, the following is a mapping for "Next Hop" addresses shown:
 
  4. How many ASes are in the AS path for the best route for 10.50.0.0/16?
 
- 5. Which `NEXT_HOP` router corresponds to the best route for 10.50.0.0/16?
+ 5. Which border router within network `a` corresponds to the best route for
+    10.50.0.0/16?  (See mapping above.)
 
  6. Was the best route for 10.50.0.0/16 learned via eBGP or iBGP?
 
