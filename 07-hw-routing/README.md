@@ -131,7 +131,8 @@ Run the following command on router `a3`, to trace the route to `d1`:
 traceroute 10.40.1.1
 ```
 
- 7. Was the path taken the shortest, in terms of router hops?
+ 7. Was the path taken the shortest, in terms of router hops?  Compare to
+    the diagram above to help you answer.
 
  8. Which BGP scenario is exemplified with the previous command?
 
