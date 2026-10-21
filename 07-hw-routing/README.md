@@ -92,15 +92,15 @@ left of "Network" indiciates that that route was selected as the "best" or
 
 For convenience, the following is a mapping for "Next Hop" addresses shown:
 
- - 10.10.0.14 is the IP address for `w1` (connected to border router `a3`)
- - 10.10.0.18 is the IP address for `z1` (connected to border router `a4`)
+ - 10.10.0.14 is the IP address for `w1`
+ - 10.10.0.18 is the IP address for `z1`
 
  3. How many routes are shown for 10.50.0.0/16?
 
  4. How many ASes are in the AS path for the best route for 10.50.0.0/16?
 
- 5. Which border router within network `a` corresponds to the best route for
-    10.50.0.0/16?  (See mapping above.)
+ 5. Which NEXT\_HOP router corresponds to the best route for 10.50.0.0/16?
+    (See mapping above.)
 
  6. Was the best route for 10.50.0.0/16 learned via eBGP or iBGP?
 
