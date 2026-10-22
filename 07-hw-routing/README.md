@@ -85,10 +85,11 @@ sudo vtysh -c 'show ip bgp vrf a3'
 The format is a little different.  In this case, each row is a "route", the
 "Network" column shows the IP prefix associated with the route, the "Path"
 column shows the AS path associated with the route, and the "Next Hop" column
-shows the BGP next hop associated with the route. Finally, an "i" to the left
-of "Network" indicates that the route was learned via iBGP, and a ">" to the
-left of "Network" indiciates that that route was selected as the "best" or
-"preferred" route.
+shows the BGP next hop associated with the route. (Note that a row with a blank
+"Network" column has the same IP prefix as row above it.) Finally, an "i" to
+the left of "Network" indicates that the route was learned via iBGP, and a ">"
+to the left of "Network" indiciates that that route was selected as the "best"
+or "preferred" route.
 
 For convenience, the following is a mapping for "Next Hop" addresses shown:
 
