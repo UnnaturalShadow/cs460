@@ -47,7 +47,7 @@ Note the following in the diagram:
  - Transit networks: `v`, `w`, `x`, `y`, `z`
  - Stub networks: `a`, `b`, `c`, `d`, `e`
  - Each network is labeled with the prefix(es) that it announces.
- - Networks `a` and `e` both use autonmous system number (ASN) 30 and announce
+ - Networks `c` and `e` both use autonmous system number (ASN) 30 and announce
    the prefix 10.200.1.0/24.
 
 All routers are running both BGP and RIP.  BGP is the inter-AS protocol used
