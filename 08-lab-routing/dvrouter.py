@@ -24,7 +24,9 @@ class DVRouter(BaseHost):
 
         self._initialize_dv_sock()
 
-        # Do any further initialization here
+        self.neighbor_ips = {}
+        self.neighbor_timeouts = {}
+        self.next_hops = {}
 
     def _initialize_dv_sock(self) -> None:
         '''Initialize the socket that will be used for sending and receiving DV
@@ -69,7 +71,20 @@ class DVRouter(BaseHost):
         self.sock.sendto(msg, (dst, DV_PORT))
 
     def handle_dv_message(self, msg: bytes) -> None:
-        pass
+        '''Remember the latest vector and restart the neighbor's keep-alive timer.'''
+        obj = json.loads(msg.decode('utf-8'))
+        neighbor = obj['name']
+        if neighbor == self.hostname:
+            return
+
+        self.neighbor_ips[neighbor] = obj['ip']
+        self.neighbor_dvs[neighbor] = obj['dv']
+        previous_timeout = self.neighbor_timeouts.get(neighbor)
+        if previous_timeout is not None:
+            previous_timeout.cancel()
+        loop = asyncio.get_event_loop()
+        self.neighbor_timeouts[neighbor] = loop.call_later(
+                NEIGHBOR_CHECK_INTERVAL, self.handle_down_link, neighbor)
 
     def send_dv_next(self):
         '''Send DV to neighbors, and schedule this method to be called again in
@@ -91,6 +106,11 @@ class DVRouter(BaseHost):
 
     def handle_down_link(self, neighbor: str):
         self.log(f'Link down: {neighbor}')
+        self.neighbor_dvs.pop(neighbor, None)
+        self.neighbor_ips.pop(neighbor, None)
+        timeout = self.neighbor_timeouts.pop(neighbor, None)
+        if timeout is not None:
+            timeout.cancel()
 
     def resolve_neighbor_dvs(self):
         '''Return a copy of the mapping of neighbors to distance vectors, with
@@ -118,7 +138,28 @@ class DVRouter(BaseHost):
         return resolved_dv
 
     def update_dv(self) -> None:
-        pass
+        '''Rebuild shortest distances from local prefixes and neighbors' vectors.'''
+        new_dv = {self.prefix_for_int(intf): 0
+                for intf in self.physical_interfaces()}
+        next_hops = {}
+        # Stable ordering keeps equal-cost routes from changing every update.
+        for neighbor in sorted(self.neighbor_dvs):
+            for prefix, distance in self.neighbor_dvs[neighbor].items():
+                cost = distance + 1
+                if prefix not in new_dv or cost < new_dv[prefix]:
+                    new_dv[prefix] = cost
+                    next_hops[prefix] = self.neighbor_ips[neighbor]
+
+        # A changed next hop also needs installing when the distance is unchanged.
+        if new_dv != self.my_dv or next_hops != self.next_hops:
+            for prefix, next_hop in self.next_hops.items():
+                if next_hops.get(prefix) != next_hop:
+                    self.forwarding_table.remove_entry(prefix)
+            for prefix, next_hop in next_hops.items():
+                if self.next_hops.get(prefix) != next_hop:
+                    self.forwarding_table.add_entry(prefix, None, next_hop)
+            self.my_dv = new_dv
+            self.next_hops = next_hops
 
     def prefix_for_int(self, intf: str) -> str:
         obj = self.ipv4_address_info_single(intf)
@@ -136,7 +177,12 @@ class DVRouter(BaseHost):
         return bcast
 
     def send_dv(self) -> None:
-        print('Sending DV')
+        '''Broadcast our vector with the source address of each interface.'''
+        for intf in self.physical_interfaces():
+            obj = {'ip': self.ipv4_address_info_single(intf)['address'],
+                    'name': self.hostname, 'dv': self.my_dv}
+            self._send_msg(json.dumps(obj).encode('utf-8'),
+                    self.bcast_for_int(intf))
 
 def main():
     router = DVRouter()
