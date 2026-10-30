@@ -167,9 +167,9 @@ class Lab1Tester:
         if self.verbosity < 0:  # --quiet
             return eval_result
         if self.verbosity > 0 or eval_result[0] < eval_result[1]:
-            print(f"Your Cougarnet output:")
-            print(output.rstrip())
-            print(f"End of Cougarnet output")
+            sys.stderr.write("Your Cougarnet output:\n")
+            sys.stderr.write(output.rstrip())
+            sys.stderr.write("\nEnd of Cougarnet output\n")
         return eval_result
 
 class Scenario1(Lab1Tester):
@@ -230,8 +230,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Test and grading driver for the link layer lab."
     )
-    parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity level and display Cougarnet output.")
-    parser.add_argument("-q", "--quiet", action="store_true", help="Only display driver output. Do not display Cougarnet output.")
+    parser.add_argument("-v", "--verbose", action="count", default=0, 
+                        help="Increase verbosity level and display Cougarnet output.")
+    parser.add_argument("-q", "--quiet", action="store_true", 
+                        help="Only display driver output. Do not display Cougarnet output.")
+    parser.add_argument("-s", "--scenario", type=int, nargs="*", choices=[1, 2, 3],
+                        help="Run the specified scenarios. If not given, then all scenarios are run.")    
     parser.add_argument('--terminal',
             action='store', type=str, default=None,
             metavar='HOSTNAMES',
@@ -239,8 +243,13 @@ def main():
                     '(all|none|host1[,host2,...])')
     args = parser.parse_args(sys.argv[1:])
 
+    if args.scenario is not None:
+        scenarios = [globals()[f"Scenario{s}"] for s in list(dict.fromkeys(args.scenario))]
+    else:
+        scenarios = [Scenario1, Scenario2, Scenario3]
+
     try:
-        for scenario in Scenario1, Scenario2, Scenario3:
+        for scenario in scenarios:
             print(f'Running {scenario.__name__}...')
             tester = scenario(
                 verbosity=(-1 if args.quiet else args.verbose), 

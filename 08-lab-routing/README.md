@@ -295,7 +295,7 @@ distance vectors and forwarding table entries have been updated properly.
  - 5 seconds: ICMP packet sent from `r9` to `r11` and back again
  - 6 seconds: ICMP packet sent from `r9` to `r12` and back again
  - 7 seconds: ICMP packet sent from `r9` to `r13` and back again
- - 8 seconds: ICMP packet sent from `r6` to `r14` and back again
+ - 8 seconds: ICMP packet sent from `r6` to `r15` and back again
  - 9 seconds: ICMP packet sent from `r7` to `r15` and back again
  - 10 seconds: Link dropped between `r2` and `r8`
  - 18 seconds: ICMP packet sent from `r7` to `r15` and back again

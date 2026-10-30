@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import re
 import signal
@@ -24,6 +25,10 @@ INTERVAL = 1.0
 class Lab4Tester:
     cmd = []
     expected_observations = []
+
+    def __init__(self, verbosity: int = 0, terminal: str|None = None):
+        self.verbosity = verbosity
+        self.terminal = terminal
 
     def evaluate(self, iteration, time_seen, observations):
         raise NotImplemented
@@ -122,6 +127,9 @@ class Lab4Tester:
 
     def run(self):
         p = None
+        if self.terminal is not None:
+            self.cmd[3] = f"--terminal={self.terminal}"
+
         try:
             p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE)
             p.wait()
@@ -132,7 +140,14 @@ class Lab4Tester:
 
         output = p.stdout.read().decode('utf-8')
         output_lines = output.splitlines()
-        return self.evaluate_lines(output_lines)
+        eval_result = self.evaluate_lines(output_lines)
+        if self.verbosity < 0:  # --quiet
+            return eval_result
+        if self.verbosity > 0 or eval_result[0] < eval_result[1]:
+            sys.stderr.write("Your Cougarnet output:\n")
+            sys.stderr.write(output.rstrip())
+            sys.stderr.write("\nEnd of Cougarnet output\n")
+        return eval_result
 
 class Scenario1(Lab4Tester):
     cmd = ['cougarnet', '--stop=14', '--disable-ipv6',
@@ -145,8 +160,8 @@ class Scenario1(Lab4Tester):
     HOST_UDP_MSG_RE = re.compile(r'^Host received ' + UDP_MSG_STR + '$')
     HOST_ICMP_MSG_RE = re.compile(r'^Host received ICMP \(type=(?P<type>\d+), code=(?P<code>\d+)\), ' + UDP_MSG_STR + '$')
 
-    def __init__(self):
-        super()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.eval_count = 0
         self.eval_mapping = [
                 self.evaluate0,
@@ -336,8 +351,8 @@ class Scenario2(Lab4Tester):
 
     HOST_TCP_MSG_RE = re.compile(r'^Host received ' + TCP_MSG_STR + '$')
 
-    def __init__(self):
-        super()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.eval_count = 0
         self.eval_mapping = [
                 self.not_listening,
@@ -509,10 +524,34 @@ class Scenario2(Lab4Tester):
         return self.eval_mapping[curr](iteration, time_seen, observations)
                             
 def main():
+    parser = argparse.ArgumentParser(
+        description="Test and grading driver for the transport layer lab."
+    )
+    parser.add_argument("-v", "--verbose", action="count", default=0, 
+                        help="Increase verbosity level and display Cougarnet output.")
+    parser.add_argument("-q", "--quiet", action="store_true", 
+                        help="Only display driver output. Do not display Cougarnet output.")
+    parser.add_argument("-s", "--scenario", type=int, nargs="*", choices=[1, 2],
+                        help="Run the specified scenarios. If not given, then all scenarios are run.")    
+    parser.add_argument('--terminal',
+            action='store', type=str, default=None,
+            metavar='HOSTNAMES',
+            help='Specify which virtual Cougarnet hosts should launch a terminal ' + \
+                    '(all|none|host1[,host2,...])')
+    args = parser.parse_args(sys.argv[1:])
+
+    if args.scenario is not None:
+        scenarios = [globals()[f"Scenario{s}"] for s in list(dict.fromkeys(args.scenario))]
+    else:
+        scenarios = [Scenario1, Scenario2]
+
     try:
-        for scenario in Scenario1, Scenario2:
+        for scenario in scenarios:
             print(f'Running {scenario.__name__}...')
-            tester = scenario()
+            tester = scenario(
+                verbosity=(-1 if args.quiet else args.verbose), 
+                terminal=args.terminal
+            )
             success, total = tester.run()
             sys.stderr.write(f'  Result: {success}/{total}\n')
     except KeyboardInterrupt:
