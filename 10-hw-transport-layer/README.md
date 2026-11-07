@@ -162,12 +162,13 @@ python3
 
 Enter the following into the interactive Python shell opened on host `b`:
 
-```
->>> import socket
->>> s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
->>> s.bind(('0.0.0.0', 5599))
->>> s.listen()
->>> s1, addr = s.accept()
+(Note that the interactive shell shows a prompt `>>>` at the start of every line.)
+```python
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(('0.0.0.0', 5599))
+s.listen()
+s1, addr = s.accept()
 ```
 
 This starts a TCP server socket, listening for incoming connections on
@@ -183,11 +184,11 @@ python3
 
 Enter the following into the interactive Python shell opened on host `a`:
 
-```
->>> import socket
->>> s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
->>> s.connect(('10.0.0.2', 5599))
->>> s.send(b'\x00' * 5000000)
+```python
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('10.0.0.2', 5599))
+s.send(b'\x00' * 5000000)
 ```
 
 This creates a TCP client socket and connects it to the server running on host
@@ -208,7 +209,7 @@ examine this, answer the following questions.
 Now add the following line on host `b`'s Python shell:
 
 ```python
->>> buf = s1.recv(1000000)
+buf = s1.recv(1000000)
 ```
 
  19. What do you observe in the Wireshark window after entering that code?
