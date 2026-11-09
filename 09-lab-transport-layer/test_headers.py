@@ -1,13 +1,19 @@
 import binascii
 import unittest
 
-from headers import IPv4Header, UDPHeader, TCPHeader
+from headers import IPv4Header, UDPHeader, TCPHeader, ICMPHeader
 
 from mysocket import TCP_FLAGS_SYN, TCP_FLAGS_ACK, \
         IPPROTO_TCP, IPPROTO_UDP
     
 
 class TestHeaders(unittest.TestCase):
+    def test_icmp_header(self):
+        hdr = ICMPHeader.from_bytes(b'\x15\x02\x00\x00\x00\x00\x00\x00')
+        self.assertEqual((hdr.type, hdr.code, hdr.checksum), (21, 2, 0))
+        self.assertEqual(ICMPHeader(5, 12, 0).to_bytes(),
+                b'\x05\x0c\x00\x00\x00\x00\x00\x00')
+
     def test_ipv4_header(self):
         ip_hdr_bytes = b'E\x00\x02\x05\x00\x00\x00\x00\x80\x06\x00\x00\xc0\xa8\n\x14\xc0\xa8\x0f\x02'
 
@@ -15,7 +21,7 @@ class TestHeaders(unittest.TestCase):
 
         actual_value = (hdr.length, hdr.ttl, hdr.protocol,
                 hdr.checksum, hdr.src, hdr.dst)
-        correct_value = (0, 0, 0, 0, '0.0.0.0', '0.0.0.0')
+        correct_value = (517, 128, 6, 0, '192.168.10.20', '192.168.15.2')
 
         self.assertEqual(actual_value, correct_value)
 
@@ -24,7 +30,7 @@ class TestHeaders(unittest.TestCase):
 
 
         actual_value = binascii.hexlify(ip_hdr_obj.to_bytes())
-        correct_value = b''
+        correct_value = b'45000421000000004011000080bb52fe80aa333f'
 
         self.assertEqual(actual_value, correct_value)
 
@@ -56,7 +62,7 @@ class TestHeaders(unittest.TestCase):
 
         actual_value = (hdr.sport, hdr.dport, hdr.seq,
                 hdr.ack, hdr.flags, hdr.checksum)
-        correct_value = (0, 0, 0, 0, 0, 0)
+        correct_value = (65347, 54739, 10765398, 8543276, 16, 0)
 
         self.assertEqual(actual_value, correct_value)
 
@@ -64,7 +70,7 @@ class TestHeaders(unittest.TestCase):
         tcp_hdr_obj = TCPHeader(1123, 2025, 876539, 452850, TCP_FLAGS_SYN | TCP_FLAGS_ACK, 0)
 
         actual_value = binascii.hexlify(tcp_hdr_obj.to_bytes())
-        correct_value = b''
+        correct_value = b'046307e9000d5ffb0006e8f25012004000000000'
 
         self.assertEqual(actual_value, correct_value)
 

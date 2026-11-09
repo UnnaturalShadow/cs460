@@ -40,17 +40,25 @@ class UDPSocket:
         self.buffer = []
 
     def handle_packet(self, pkt: bytes) -> None:
-        self.buffer.append((b'', '0.0.0.0', 0))
+        ip_hdr = IPv4Header.from_bytes(pkt[:IP_HEADER_LEN])
+        udp_hdr = UDPHeader.from_bytes(pkt[IP_HEADER_LEN:UDPIP_HEADER_LEN])
+        data = pkt[UDPIP_HEADER_LEN:IP_HEADER_LEN + udp_hdr.length]
+        self.buffer.append((data, ip_hdr.src, udp_hdr.sport))
         self._notify_on_data()
 
     @classmethod
     def create_packet(cls, src: str, sport: int, dst: str, dport: int,
             data: bytes=b'') -> bytes:
-        pass
+        udp_hdr = UDPHeader(sport, dport, UDP_HEADER_LEN + len(data), 0)
+        ip_hdr = IPv4Header(UDPIP_HEADER_LEN + len(data), 64,
+                IPPROTO_UDP, 0, src, dst)
+        return ip_hdr.to_bytes() + udp_hdr.to_bytes() + data
 
     def send_packet(self, remote_addr: str, remote_port: int,
             data: bytes) -> None:
-        pass
+        pkt = self.create_packet(self._local_addr, self._local_port,
+                remote_addr, remote_port, data)
+        self._send_ip_packet(pkt)
 
     def recvfrom(self) -> tuple[bytes, str, int]:
         return self.buffer.pop(0)
@@ -94,6 +102,10 @@ class TCPListenerSocket(TCPSocketBase):
                     ip_hdr.src, tcp_hdr.sport, sock)
 
             sock.handle_packet(pkt)
+        elif not tcp_hdr.flags & TCP_FLAGS_RST:
+            self._send_ip_packet_func(TCPSocket.create_packet(
+                    self._local_addr, self._local_port,
+                    ip_hdr.src, tcp_hdr.sport, tcp_hdr.ack, 0, TCP_FLAGS_RST))
 
 
 class TCPSocket(TCPSocketBase):
@@ -161,16 +173,38 @@ class TCPSocket(TCPSocketBase):
 
 
     def initiate_connection(self) -> None:
-        pass
+        self.state = TCP_STATE_SYN_SENT
+        self.send_packet(self.base_seq_self, 0, TCP_FLAGS_SYN)
 
     def handle_syn(self, pkt: bytes) -> None:
-        pass
+        hdr = TCPHeader.from_bytes(pkt[IP_HEADER_LEN:TCPIP_HEADER_LEN])
+        if not hdr.flags & TCP_FLAGS_SYN:
+            if not hdr.flags & TCP_FLAGS_RST:
+                self.send_packet(hdr.ack, 0, TCP_FLAGS_RST)
+            return
+        self.base_seq_other = hdr.seq
+        self.state = TCP_STATE_SYN_RECEIVED
+        self.send_packet(self.base_seq_self, (hdr.seq + 1) & 0xffffffff,
+                TCP_FLAGS_SYN | TCP_FLAGS_ACK)
 
     def handle_synack(self, pkt: bytes) -> None:
-        pass
+        hdr = TCPHeader.from_bytes(pkt[IP_HEADER_LEN:TCPIP_HEADER_LEN])
+        if (not hdr.flags & TCP_FLAGS_SYN or
+                not hdr.flags & TCP_FLAGS_ACK or
+                hdr.ack != (self.base_seq_self + 1) & 0xffffffff):
+            return
+        self.base_seq_other = hdr.seq
+        self.state = TCP_STATE_ESTABLISHED
+        self.send_packet((self.base_seq_self + 1) & 0xffffffff,
+                (hdr.seq + 1) & 0xffffffff, TCP_FLAGS_ACK)
 
     def handle_ack_after_synack(self, pkt: bytes) -> None:
-        pass
+        hdr = TCPHeader.from_bytes(pkt[IP_HEADER_LEN:TCPIP_HEADER_LEN])
+        if (hdr.flags & TCP_FLAGS_SYN or
+                not hdr.flags & TCP_FLAGS_ACK or
+                hdr.ack != (self.base_seq_self + 1) & 0xffffffff):
+            return
+        self.state = TCP_STATE_ESTABLISHED
 
     def continue_connection(self, pkt: bytes) -> None:
         if self.state == TCP_STATE_LISTEN:
@@ -186,11 +220,16 @@ class TCPSocket(TCPSocketBase):
     @classmethod
     def create_packet(cls, src: str, sport: int, dst: str, dport: int,
             seq: int, ack: int, flags: int, data: bytes=b'') -> bytes:
-        return b''
+        tcp_hdr = TCPHeader(sport, dport, seq, ack, flags, 0)
+        ip_hdr = IPv4Header(TCPIP_HEADER_LEN + len(data), 64,
+                IPPROTO_TCP, 0, src, dst)
+        return ip_hdr.to_bytes() + tcp_hdr.to_bytes() + data
 
     def send_packet(self, seq: int, ack: int, flags: int,
             data: bytes=b'') -> None:
-        pass
+        pkt = self.create_packet(self._local_addr, self._local_port,
+                self._remote_addr, self._remote_port, seq, ack, flags, data)
+        self._send_ip_packet(pkt)
 
     def handle_data(self, pkt: bytes) -> None:
         pass
