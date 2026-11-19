@@ -11,7 +11,7 @@ class TCPSendBuffer(object):
     def bytes_outstanding(self) -> int:
         pass
 
-    def put(self, data: bytes) -> int:
+    def put(self, data: bytes) -> None:
         pass
 
     def get(self, size: int) -> tuple[bytes, int]:
