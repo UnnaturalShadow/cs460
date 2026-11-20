@@ -157,7 +157,7 @@ class TCPSocket(TCPSocketBase):
         # The congestion window (cwnd), which represents the total number of
         # bytes that may be outstanding (unacknowledged) at one time
         self.cwnd = initial_cwnd
-        self.cwnd_inc = self.cwnd
+        self.cwnd_inc = 0
 
         self.congestion_control = congestion_control
 
@@ -266,11 +266,16 @@ class TCPSocket(TCPSocketBase):
     @classmethod
     def create_packet(cls, src: str, sport: int, dst: str, dport: int,
             seq: int, ack: int, flags: int, data: bytes=b'') -> bytes:
-        return b''
+        tcp_hdr = TCPHeader(sport, dport, seq, ack, flags, 0)
+        ip_hdr = IPv4Header(TCPIP_HEADER_LEN + len(data), 64,
+                IPPROTO_TCP, 0, src, dst)
+        return ip_hdr.to_bytes() + tcp_hdr.to_bytes() + data
 
     def send_packet(self, seq: int, ack: int, flags: int,
             data: bytes=b'') -> None:
-        pass
+        pkt = self.create_packet(self._local_addr, self._local_port,
+                self._remote_addr, self._remote_port, seq, ack, flags, data)
+        self._send_ip_packet(pkt)
 
     def relative_seq_other(self, seq: int) -> int:
         '''
@@ -294,7 +299,14 @@ class TCPSocket(TCPSocketBase):
         return seq - self.base_seq_self
 
     def send_if_possible(self) -> None:
-        pass
+        while self.send_buffer.bytes_not_yet_sent():
+            available = self.cwnd - self.send_buffer.bytes_outstanding()
+            if available <= 0:
+                break
+            data, sequence = self.send_buffer.get(min(self.mss, available))
+            if self.timer is None:
+                self.start_timer()
+            self.send_packet(sequence, self.ack, 0, data)
 
     def send(self, data: bytes) -> None:
         self.send_buffer.put(data)
@@ -306,13 +318,62 @@ class TCPSocket(TCPSocketBase):
         return data
 
     def handle_data(self, pkt: bytes) -> None:
-        pass
+        header = TCPHeader.from_bytes(pkt[IP_HEADER_LEN:TCPIP_HEADER_LEN])
+        self.receive_buffer.put(pkt[TCPIP_HEADER_LEN:], header.seq)
+        data, sequence = self.receive_buffer.get()
+        self.ready_buffer += data
+        self.ack = sequence + len(data)
+        self.send_ack()
+        if data:
+            self._notify_on_data()
 
     def handle_ack(self, pkt: bytes) -> None:
-        pass
+        header = TCPHeader.from_bytes(pkt[IP_HEADER_LEN:TCPIP_HEADER_LEN])
+        ack = header.ack
+        if ack < self.send_buffer.base_seq or ack > self.send_buffer.next_seq:
+            return
+        if ack == self.send_buffer.base_seq:
+            if not self.send_buffer.bytes_outstanding():
+                return
+            if ack == self.last_ack:
+                self.num_dup_acks += 1
+            else:
+                self.last_ack = ack
+                self.num_dup_acks = 0
+            if self.fast_retransmit and self.num_dup_acks == 3:
+                self.retransmit()
+            return
+
+        bytes_ackd = ack - self.send_buffer.base_seq
+        self.send_buffer.slide(ack)
+        self.seq = ack
+        self.last_ack = ack
+        self.num_dup_acks = 0
+        self.cancel_timer()
+        if self.send_buffer.bytes_outstanding():
+            self.start_timer()
+        if self.congestion_control == 'tahoe':
+            if self.cwnd < self.ssthresh:
+                self.cwnd_inc += bytes_ackd
+            else:
+                self.cwnd_inc += bytes_ackd * self.mss / self.cwnd
+            while self.cwnd_inc >= self.mss:
+                self.cwnd += self.mss
+                self.cwnd_inc -= self.mss
+        self.send_if_possible()
 
     def retransmit(self) -> None:
-        pass
+        self.cancel_timer()
+        data, sequence = self.send_buffer.get_for_resend(self.mss)
+        if not data:
+            return
+        if self.congestion_control == 'tahoe':
+            self.ssthresh = max(self.mss,
+                    (self.cwnd // (2 * self.mss)) * self.mss)
+            self.cwnd = self.mss
+            self.cwnd_inc = 0
+        self.start_timer()
+        self.send_packet(sequence, self.ack, 0, data)
 
     def start_timer(self) -> None:
         loop = asyncio.get_event_loop()

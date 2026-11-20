@@ -26,10 +26,15 @@ class IPv4Header:
 
     @classmethod
     def from_bytes(cls, hdr: bytes) -> IPv4Header:
-        return cls(0, 0, 0, 0, '0.0.0.0', '0.0.0.0')
+        _, _, length, _, _, ttl, protocol, checksum, src, dst = struct.unpack(
+                '!BBHHHBBH4s4s', hdr[:IP_HEADER_LEN])
+        return cls(length, ttl, protocol, checksum,
+                ip_binary_to_str(src), ip_binary_to_str(dst))
 
     def to_bytes(self) -> bytes:
-        return b''
+        return struct.pack('!BBHHHBBH4s4s', 0x45, 0, self.length,
+                0, 0, self.ttl, self.protocol, self.checksum,
+                ip_str_to_binary(self.src), ip_str_to_binary(self.dst))
 
 
 class UDPHeader:
@@ -69,7 +74,11 @@ class TCPHeader:
 
     @classmethod
     def from_bytes(cls, hdr: bytes) -> TCPHeader:
-        return cls(0, 0, 0, 0, 0, 0)
+        sport, dport, seq, ack, _, flags, _, checksum, _ = struct.unpack(
+                '!HHIIBBHHH', hdr[:TCP_HEADER_LEN])
+        return cls(sport, dport, seq, ack, flags, checksum)
 
     def to_bytes(self) -> bytes:
-        return b''
+        return struct.pack('!HHIIBBHHH', self.sport, self.dport,
+                self.seq, self.ack, 5 << 4, self.flags,
+                TCP_RECEIVE_WINDOW, self.checksum, 0)
