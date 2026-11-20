@@ -293,7 +293,7 @@ class TCPSocket(TCPSocketBase):
 
         return seq - self.base_seq_self
 
-    def send_if_possible(self) -> int:
+    def send_if_possible(self) -> None:
         pass
 
     def send(self, data: bytes) -> None:

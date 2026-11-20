@@ -608,11 +608,11 @@ In the file `mysocket.py`, flesh out the following sender-side methods for the
    With this method, bytes previously sent are acknowledged.  The method checks
    the acknowledgment number in the TCP header and acknowledges any new data by
    sliding the window (i.e., `send_buffer.slide()`).  It also cancels the timer
-   (i.e., using `cancel_timer()`, which has been implemented for you)  and
-   restarts it (i.e., using `start_timer()`) if there are still bytes outstanding.
-   This ensures that the timer is always associated with the oldest
-   unacknowledged segment.  Finally, it calls `send_if_possible()` to send any
-   segments that are allowed within the newly-slid window.
+   when new data is acknowledged (i.e., using `cancel_timer()`, which has been
+   implemented for you)  and restarts it (i.e., using `start_timer()`) if there
+   are still bytes outstanding. This ensures that the timer is always associated
+   with the oldest unacknowledged segment.  Finally, it calls `send_if_possible()`
+   to send any segments that are allowed within the newly-slid window.
 
    This method is called by the `TCPSocket.handle_packet()` method whenever a
    packet is received in which the `ACK` flag is set.
